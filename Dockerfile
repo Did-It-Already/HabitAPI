@@ -5,6 +5,7 @@ WORKDIR /app
 COPY . .
 
 RUN npm install
+RUN npm i -s amqplib
 
 EXPOSE 3525
 
