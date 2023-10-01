@@ -2,6 +2,7 @@ const habito = require('../models/habito');
 var express = require('express');
 const estadistica = require('../models/estadistica');
 const mongoose = require('mongoose');
+const amqp= require("amqplib");
 
 class HabitsServices {
      async seeHabits (req, res)  {
@@ -17,7 +18,8 @@ class HabitsServices {
         
     }
     async seeHabit (req, res)  {
-      try{
+      try{  
+      
       const arrayhabitos = await habito.find({_id: req.params.habitid});
       if(arrayhabitos.length==0) return res.status(400).send('El habito no existe')
       res.send(arrayhabitos);
@@ -107,27 +109,69 @@ async doHabit (req, res)  {
 }
 
 async checkHabit (req, res)  {
+    
+
+  const rabbitSettings = {
+  protocol:"amqp",
+  hostname: "172.17.0.2",
+  port:5672,
+  username:"guest",
+  password:"guest",
+  vhost:"/",
+  authMechanism:["PLAIN","AMQPLAIN","EXTERNAL"],
+  }
+  const queue="habits";
   const habits= await habito.find()
   let date = new Date()
   date= date.toLocaleDateString('es-MX');
   date = date.split('/'); 
   date = `${date[2]}/${date[1]}/${date[0]}`; 
   date= new Date(date)
-  
-  for(let i=0;i<habits.length;i++){
-    if((date.getTime()-habits[i].start_date.getTime())/(1000*60*60*24)==habits[i].frequency){
-      try{
-      await habito.findOneAndUpdate({_id : habits[i]._id}, {is_done : false,start_date:date})
-      }catch (error) {
-        res.status(500).send('Error al reiniciar el habito')
-        console.log(error)
+  try{
+      const conn= await amqp.connect(rabbitSettings);
+      console.log("Conectado a RabbitMQ");
+
+      const channel= await conn.createChannel();
+      console.log("Canal creado");
+
+      const res= await channel.assertQueue(queue);
+      console.log("Cola creada");
+
+      for(let h in habits){
+          await channel.sendToQueue(queue, Buffer.from(JSON.stringify(habits[h])));
+          console.log(`Mensaje enviado ${queue}`);
       }
-      
-    }
-    
+
+      console.log(`Esperando habitos de ${date}`);
+      channel.consume(queue, msg=>{
+          const input= JSON.parse(msg.content.toString());
+          console.log(`Recibido ${input.name}`);
+          console.log(input)
+          let hdate= new Date(input.start_date)
+          if(parseInt(input.frequency)==(date.getTime()-hdate.getTime())/(1000*60*60*24)){
+            habito.findOneAndUpdate(
+              { _id: input._id },
+              { $set: { is_done: false, start_date: date } },
+              { new: true }
+            )
+            .then((updatedHabit) => {
+              channel.ack(msg);
+              console.log("Habito recibido y actualizado");
+            })
+            .catch((error) => {
+              res.status(500).send('Error al reiniciar el habito');
+              console.log(error);
+            });
+          }else{
+              channel.ack(msg);
+              console.log("el habito aun no se debe actualizar");
+          }
+      });
+  }catch(err){
+      console.error(err);
   }
-  console.log("Habitos revisados correctamente")
-  res.send('Habitos revisados correctamente')
+  console.log("revisando habitos")
+  res.send('revisando habitos')
 }
 async seeStadistics (req, res)  {
   try{
