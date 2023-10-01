@@ -18,9 +18,11 @@ class HabitsServices {
         
     }
     async seeHabit (req, res)  {
-      try{  
-      
-      const arrayhabitos = await habito.find({_id: req.params.habitid});
+      try{
+      const userId = req.params.userid;
+      const habitId = req.params.habitid;
+      const query = habitId ? { user_id: userId, _id: habitId } : { user_id: userId };
+      const arrayhabitos = await habito.find(query);
       if(arrayhabitos.length==0) return res.status(400).send('El habito no existe')
       res.send(arrayhabitos);
       console.log("Habito encontrado correctamente")

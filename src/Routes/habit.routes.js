@@ -8,7 +8,7 @@ router.get('/', function(req, res){
 	});
 });
 router.get('/habitos', habitServices.seeHabits);
-router.get('/habitos/:habitid', habitServices.seeHabit);
+router.get('/habitos/:userid/:habitid?', habitServices.seeHabit);
 router.post('/habitos', habitServices.createHabit);
 router.put('/habitos/:habitid', habitServices.updateHabit);
 router.delete('/habitos/:habitid', habitServices.deleteHabit);
