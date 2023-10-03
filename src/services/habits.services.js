@@ -115,7 +115,7 @@ async checkHabit (req, res)  {
 
   const rabbitSettings = {
   protocol:"amqp",
-  hostname: "172.17.0.2",
+  hostname: "172.17.0.6",
   port:5672,
   username:"guest",
   password:"guest",
@@ -188,7 +188,7 @@ async seeStadistics (req, res)  {
 async seeStadistic (req, res)  {
   try{
   if(req.params.filtro=='date'){
-    req.params.valor=req.params.valor+"T05:00:00.000Z"
+    req.params.valor=req.params.valor+"T00:00:00.000Z"
   }
   if (req.params.filtro === 'habit_id') {
     req.params.valor = new mongoose.Types.ObjectId(req.params.valor);
