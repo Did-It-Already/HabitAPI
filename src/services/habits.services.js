@@ -182,25 +182,21 @@ async checkHabit (req, res)  {
   console.log("revisando habitos")
   res.send('revisando habitos')
 }
-async seeStadistics (req, res)  {
-  try{
-  const arraystadistics = await estadistica.find();
-  res.send(arraystadistics);
-  }catch (error) {
-    res.status(500).send('Error al buscar las estadisticas')
-    console.log(error)
-  }
-      
-}
+
 async seeStadistic (req, res)  {
   try{
-  if(req.params.filtro=='date'){
-    req.params.valor=req.params.valor+"T00:00:00.000Z"
-  }
-  if (req.params.filtro === 'habit_id') {
-    req.params.valor = new mongoose.Types.ObjectId(req.params.valor);
-  }
-  const arraystadistics = await estadistica.find({[req.params.filtro]: req.params.valor});
+    if(req.query.date){
+      req.query.date=req.query.date+"T00:00:00.000Z"
+    }
+    if (req.query.habit_id) {
+      req.query.habit_id = new mongoose.Types.ObjectId(req.query.habit_id);
+    }
+    const date = req.query.date ? {date: req.query.date} : {};
+    const habit_id= req.query.habit_id?{habit_id: req.query.habit_id}: {};
+    const user_id= req.query.user_id?{user_id: req.query.user_id}: {};
+    const _id= req.query._id?{_id: req.query._id}: {};
+  
+  const arraystadistics = await estadistica.find({$and:[date,habit_id,user_id,_id]});
   res.send(arraystadistics);
   }catch (error) {
     res.status(500).send('Error al buscar las estadisticas')

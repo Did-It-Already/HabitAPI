@@ -14,7 +14,6 @@ router.put('/habitos/:habitid', habitServices.updateHabit);
 router.delete('/habitos/:habitid', habitServices.deleteHabit);
 router.put('/hacer/:habitid', habitServices.doHabit);
 router.put('/revisar', habitServices.checkHabit);
-router.get('/estadisticas', habitServices.seeStadistics);
-router.get('/estadisticas/:filtro/:valor', habitServices.seeStadistic)
+router.get('/estadisticas', habitServices.seeStadistic)
 
 module.exports = router;
