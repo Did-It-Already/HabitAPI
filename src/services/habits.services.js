@@ -87,18 +87,25 @@ async doHabit (req, res)  {
   date = date.split('/'); 
   date = `${date[2]}/${date[1]}/${date[0]}`; 
   date= new Date(date)
-  
-  if(await habito.findOne({_id : req.params.habitid})){
+  let habits=await habito.findOne({_id : req.params.habitid})
+  if(habits){
   try{
-    await habito.findOneAndUpdate({_id : req.params.habitid}, {is_done : true})
-    let habits= await habito.findOne({_id : req.params.habitid})
-    console.log(habits)
+const cond=habits.is_done ? {is_done : false} : {is_done : true};
+    await habito.findOneAndUpdate({_id : req.params.habitid}, cond)
+    if(cond.is_done){
+      habits= await habito.findOne({_id : req.params.habitid})
       let estadistica1 = {
         habit_id: habits._id,
         date: date,
         user_id: habits.user_id
       }
       estadistica.create(estadistica1)
+    }else{
+      const arraystadistics= await estadistica.find({habit_id: habits._id})
+      await estadistica.deleteOne({_id : arraystadistics.at(-1)._id});
+
+    }
+    
     
     res.send('Habito actualizado correctamente')
   }catch (error) {
@@ -150,7 +157,7 @@ async checkHabit (req, res)  {
           console.log(`Recibido ${input.name}`);
           console.log(input)
           let hdate= new Date(input.start_date)
-          if(parseInt(input.frequency)==(date.getTime()-hdate.getTime())/(1000*60*60*24)){
+          if(parseInt(input.frequency)<=(date.getTime()-hdate.getTime())/(1000*60*60*24)){
             habito.findOneAndUpdate(
               { _id: input._id },
               { $set: { is_done: false, start_date: date } },
