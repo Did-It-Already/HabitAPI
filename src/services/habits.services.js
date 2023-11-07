@@ -3,7 +3,7 @@ var express = require('express');
 const estadistica = require('../models/estadistica');
 const mongoose = require('mongoose');
 const amqp= require("amqplib");
-
+const ConsumeServices = require('./consume.services');
 class HabitsServices {
      async seeHabits (req, res)  {
       try{
@@ -42,6 +42,7 @@ class HabitsServices {
       newHabit.start_date = newHabit.start_date.split('/'); 
       newHabit.start_date = `${newHabit.start_date[2]}/${newHabit.start_date[1]}/${newHabit.start_date[0]}`; 
       newHabit.is_done = false;
+      newHabit.number_of_times = 0;
       habito.create(newHabit)
       res.send(newHabit)
       console.log("Habito creado correctamente")
@@ -81,7 +82,7 @@ async deleteHabit (req, res)  {
   }
 }
 async doHabit (req, res)  {
-  
+  const consumeService = new ConsumeServices();
   let date = new Date()
   date= date.toLocaleDateString('es-MX');
   date = date.split('/'); 
@@ -93,6 +94,7 @@ async doHabit (req, res)  {
 const cond=habits.is_done ? {is_done : false} : {is_done : true};
     await habito.findOneAndUpdate({_id : req.params.habitid}, cond)
     if(cond.is_done){
+      await habito.findOneAndUpdate({_id : req.params.habitid}, {number_of_times: await consumeService.callAddInteger(habits.number_of_times, 1)})
       habits= await habito.findOne({_id : req.params.habitid})
       let estadistica1 = {
         habit_id: habits._id,
@@ -102,6 +104,7 @@ const cond=habits.is_done ? {is_done : false} : {is_done : true};
       estadistica.create(estadistica1)
     }else{
       const arraystadistics= await estadistica.find({habit_id: habits._id})
+      await habito.findOneAndUpdate({_id : req.params.habitid}, {number_of_times: await consumeService.callAddInteger(habits.number_of_times, -1)})
       await estadistica.deleteOne({_id : arraystadistics.at(-1)._id});
 
     }

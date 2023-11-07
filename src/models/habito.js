@@ -7,7 +7,8 @@ const HabitoSchema = new Schema({
     start_date: { type: Date, required: true },
     frequency: { type: Number, required: true },
     is_done: { type: Boolean, required: true },
-    user_id: { type: Number, required: true }
+    user_id: { type: Number, required: true },
+    number_of_times: { type: Number, required: true }
 
 });
 const Habito = mongoose.model('habito', HabitoSchema);
